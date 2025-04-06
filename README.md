@@ -2,11 +2,19 @@
 
 Database interaction using natural language queries
 
+Stack:
+* Gemini
+* Spring AI (Vertex)
+* Java
+* Gradle
+* JDBC
+* MySQL
+
 ## Project structure & class diagram:
 
 ```
 com/
-└── nldbquery/
+└── sawal/
     ├── Main.java
     │   └── class Main
     │         ├── main()                        // Application entry point
