@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.sawal'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '21'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' } // For milestone releases
+    maven {
+        name = 'Central Portal Snapshots'
+        url = 'https://central.sonatype.com/repository/maven-snapshots/'
+    }
+}
+
+dependencies {
+    // Spring AI BOM - pulls correct versions for all modules
+    implementation platform("org.springframework.ai:spring-ai-bom:1.0.0-M6")
+
+    // Spring Boot core
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // Spring AI Gemini via Vertex AI
+    implementation 'org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter'
+
+    // JDBC + MySQL
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+}
