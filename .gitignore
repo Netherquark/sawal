@@ -1,1 +1,5 @@
 .gradle/
+.vscode/
+build
+src/main/resources/service-account-key.json
+src/main/resources/application.properties
