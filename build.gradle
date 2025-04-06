@@ -7,6 +7,13 @@ plugins {
 group = 'com.sawal'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '21'
+springBoot {
+    mainClass = 'com.sawal.Main'
+}
+
+// bootJar {
+//     mainClass = 'com.sawal.Main'
+// }
 
 repositories {
     mavenCentral()
@@ -40,8 +47,4 @@ dependencies {
 
 test {
     useJUnitPlatform()
-}
-
-bootJar {
-    mainClass = 'com.sawal.Main'
 }
