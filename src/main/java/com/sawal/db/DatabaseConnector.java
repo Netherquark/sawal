@@ -13,8 +13,7 @@ import java.util.Map;
 public class DatabaseConnector {
 
     @Value("${spring.datasource.url}")
-    private String url = "jdbc:mysql://localhost:3306/sawal?useSSL=false&serverTimezone=UTC
-";
+    private String url = "jdbc:mysql://localhost:3306/sawal?useSSL=false&serverTimezone=UTC";
 
     @Value("${spring.datasource.username}")
     private String username = "root";
