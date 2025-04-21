@@ -26,7 +26,7 @@ public class Main implements CommandLineRunner {
     public void run(String... args) {
         String input = args.length > 0
                 ? String.join(" ", args)
-                : "What is the 3rd book Hawking published";
+                : "What is the 3rd book Hawking published"; // Default example query
 
         System.out.println("\nProcessing query: " + input);
 
