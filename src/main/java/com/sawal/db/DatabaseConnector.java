@@ -35,6 +35,13 @@ public class DatabaseConnector {
         }
     }
 
+    /**
+     * Exposes the underlying JDBC Connection for metadata introspection.
+     */
+    public Connection getConnection() {
+        return this.connection;
+    }
+
     private PreparedStatement prepare(String sql, Object... params) throws SQLException {
         PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         for (int i = 0; i < params.length; i++) {
@@ -54,7 +61,7 @@ public class DatabaseConnector {
 
     public int update(String sql, Object... params) {
         try (PreparedStatement ps = prepare(sql, params)) {
-            return ps.executeUpdate();  // Return the number of affected rows
+            return ps.executeUpdate();
         } catch (SQLException e) {
             throw new DatabaseException("Error executing update: " + sql, e);
         }
