@@ -52,6 +52,7 @@ public class DatabaseConnector {
 
     public ResultSet query(String sql, Object... params) {
         try {
+            System.out.println("[SQL] Executing Query: " + interpolate(sql, params)); // 👈 Add this line
             PreparedStatement ps = prepare(sql, params);
             return ps.executeQuery();
         } catch (SQLException e) {
@@ -61,11 +62,13 @@ public class DatabaseConnector {
 
     public int update(String sql, Object... params) {
         try (PreparedStatement ps = prepare(sql, params)) {
+            System.out.println("[SQL] Executing Update: " + interpolate(sql, params));
             return ps.executeUpdate();
         } catch (SQLException e) {
             throw new DatabaseException("Error executing update: " + sql, e);
         }
     }
+    
 
     public long insert(String table, Map<String, Object> data) {
         String cols = String.join(", ", data.keySet());
@@ -76,6 +79,7 @@ public class DatabaseConnector {
             for (Object val : data.values()) {
                 ps.setObject(idx++, val);
             }
+            System.out.println("[SQL] Executing Insert: " + interpolate(sql, data.values().toArray()));
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 return keys.next() ? keys.getLong(1) : -1L;
@@ -84,13 +88,15 @@ public class DatabaseConnector {
             throw new DatabaseException("Error inserting into " + table, e);
         }
     }
+    
 
     public int update(String table, Map<String, Object> data, String whereClause, Object... whereParams) {
         String setClause = data.keySet().stream()
             .map(col -> col + " = ?")
-            .reduce((a,b) -> a + ", " + b)
+            .reduce((a, b) -> a + ", " + b)
             .orElse("");
         String sql = "UPDATE " + table + " SET " + setClause + " WHERE " + whereClause;
+    
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             int idx = 1;
             for (Object val : data.values()) {
@@ -99,6 +105,11 @@ public class DatabaseConnector {
             for (Object wp : whereParams) {
                 ps.setObject(idx++, wp);
             }
+            Object[] allParams = new Object[data.size() + whereParams.length];
+            int i = 0;
+            for (Object val : data.values()) allParams[i++] = val;
+            for (Object wp : whereParams) allParams[i++] = wp;
+            System.out.println("[SQL] Executing Update with WHERE: " + interpolate(sql, allParams));
             return ps.executeUpdate();
         } catch (SQLException e) {
             throw new DatabaseException("Error updating " + table, e);
@@ -107,8 +118,9 @@ public class DatabaseConnector {
 
     public int delete(String table, String whereClause, Object... whereParams) {
         String sql = "DELETE FROM " + table + " WHERE " + whereClause;
+        System.out.println("[SQL] Executing Delete: " + interpolate(sql, whereParams));
         return update(sql, whereParams);
-    }
+    }    
 
     public Map<String, Object> findById(String table, String idColumn, Object id) {
         String sql = "SELECT * FROM " + table + " WHERE " + idColumn + " = ?";
@@ -126,11 +138,22 @@ public class DatabaseConnector {
     }
 
     public void update(String rawSql) {
+        System.out.println("[SQL] Executing Raw SQL: " + rawSql);
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(rawSql);
         } catch (SQLException e) {
             throw new DatabaseException("Error executing DDL: " + rawSql, e);
         }
+    }
+    
+
+    private String interpolate(String sql, Object... params) {
+        if (params == null || params.length == 0) return sql;
+        for (Object param : params) {
+            String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
+            sql = sql.replaceFirst("\\?", value);
+        }
+        return sql;
     }
 
     public void closeConnection() {
