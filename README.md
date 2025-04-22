@@ -20,11 +20,42 @@ The project is built using Spring Boot, providing a robust framework for managin
 | MySQL              |
 | Google Auth Library|
 
+## Try it out!
+##### Prerequisites
+```
+Comprehensively tested on RHEL 9.5, YMMV with other OSes
+openjdk-21
+mysql
+jdbc
+gcloud
+Google Cloud Project with a service account having Vertex AI + Gemini AI + Compute APIs accessible.
+```
+##### Commpile from source
+1. `git clone https://github.com/Netherquark/sawal.git`
+2. `cd sawal`
+3. `mkdir src/main/resources`
+4. `nano src/main/resources/application.properties`
+5. add your service-account-key.json in /src/main/resources/
+6. Compile: `./gradlew clean build --refresh-dependencies`
+7. Run: `./gradlew bootRun --stacktrace`
+
+##### Reference application.properties:
+```
+# MySQL Datasource
+spring.datasource.url=jdbc:mysql://localhost:3306/library?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+spring.datasource.username=root
+spring.datasource.password=johndoe
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Spring AI Vertex Gemini configuration
+spring.ai.vertex.ai.gemini.project-id=sawal-XXXXX
+spring.ai.vertex.ai.gemini.location=us-central1
+spring.ai.vertex.ai.gemini.credentials.location=src/main/resources/service-account-key.json
+spring.ai.vertex.ai.gemini.chat.options.model=gemini-2.0-flash
+spring.ai.vertex.ai.gemini.chat.options.temperature=0.2
+```
+
 ## Project structure & class diagram:
- 
-
-
- 
 
 ```
 
