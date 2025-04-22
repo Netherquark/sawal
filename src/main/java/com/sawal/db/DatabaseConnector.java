@@ -13,13 +13,13 @@ import java.util.Map;
 public class DatabaseConnector {
 
     @Value("${spring.datasource.url}")
-    private String url = "jdbc:mysql://localhost:3306/sawal?useSSL=false&serverTimezone=UTC";
+    private String url;
 
     @Value("${spring.datasource.username}")
-    private String username = "root";
+    private String username;
 
     @Value("${spring.datasource.password}")
-    private String password = "YOUR_PASSWORD";
+    private String password;
 
     private Connection connection;
 
@@ -35,9 +35,6 @@ public class DatabaseConnector {
         }
     }
 
-    /**
-     * Exposes the underlying JDBC Connection for metadata introspection.
-     */
     public Connection getConnection() {
         return this.connection;
     }
@@ -52,7 +49,8 @@ public class DatabaseConnector {
 
     public ResultSet query(String sql, Object... params) {
         try {
-            System.out.println("[SQL] Executing Query: " + interpolate(sql, params)); // 👈 Add this line
+            validateSqlSafety(sql);
+            System.out.println("[SQL] Executing Query: " + interpolate(sql, params));
             PreparedStatement ps = prepare(sql, params);
             return ps.executeQuery();
         } catch (SQLException e) {
@@ -61,14 +59,20 @@ public class DatabaseConnector {
     }
 
     public int update(String sql, Object... params) {
-        try (PreparedStatement ps = prepare(sql, params)) {
-            System.out.println("[SQL] Executing Update: " + interpolate(sql, params));
-            return ps.executeUpdate();
+        try {
+            validateSqlSafety(sql);
+            try (PreparedStatement ps = prepare(sql, params)) {
+                System.out.println("[SQL] Executing Update: " + interpolate(sql, params));
+                int affected = ps.executeUpdate();
+                if (isUpdateOrDelete(sql) && affected == 0) {
+                    throw new SQLException("Update/Delete affected 0 rows. Possible error or no match.");
+                }
+                return affected;
+            }
         } catch (SQLException e) {
             throw new DatabaseException("Error executing update: " + sql, e);
         }
     }
-    
 
     public long insert(String table, Map<String, Object> data) {
         String cols = String.join(", ", data.keySet());
@@ -88,15 +92,18 @@ public class DatabaseConnector {
             throw new DatabaseException("Error inserting into " + table, e);
         }
     }
-    
 
     public int update(String table, Map<String, Object> data, String whereClause, Object... whereParams) {
+        if (whereClause == null || whereClause.trim().isEmpty()) {
+            throw new DatabaseException("Unsafe SQL: UPDATE without WHERE clause.");
+        }
+
         String setClause = data.keySet().stream()
             .map(col -> col + " = ?")
             .reduce((a, b) -> a + ", " + b)
             .orElse("");
         String sql = "UPDATE " + table + " SET " + setClause + " WHERE " + whereClause;
-    
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             int idx = 1;
             for (Object val : data.values()) {
@@ -110,17 +117,24 @@ public class DatabaseConnector {
             for (Object val : data.values()) allParams[i++] = val;
             for (Object wp : whereParams) allParams[i++] = wp;
             System.out.println("[SQL] Executing Update with WHERE: " + interpolate(sql, allParams));
-            return ps.executeUpdate();
+            int affected = ps.executeUpdate();
+            if (affected == 0) {
+                throw new SQLException("Update affected 0 rows. Possible error or no matching records.");
+            }
+            return affected;
         } catch (SQLException e) {
             throw new DatabaseException("Error updating " + table, e);
         }
     }
 
     public int delete(String table, String whereClause, Object... whereParams) {
+        if (whereClause == null || whereClause.trim().isEmpty()) {
+            throw new DatabaseException("Unsafe SQL: DELETE without WHERE clause.");
+        }
         String sql = "DELETE FROM " + table + " WHERE " + whereClause;
         System.out.println("[SQL] Executing Delete: " + interpolate(sql, whereParams));
         return update(sql, whereParams);
-    }    
+    }
 
     public Map<String, Object> findById(String table, String idColumn, Object id) {
         String sql = "SELECT * FROM " + table + " WHERE " + idColumn + " = ?";
@@ -138,14 +152,28 @@ public class DatabaseConnector {
     }
 
     public void update(String rawSql) {
-        System.out.println("[SQL] Executing Raw SQL: " + rawSql);
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(rawSql);
+        try {
+            validateSqlSafety(rawSql);
+            System.out.println("[SQL] Executing Raw SQL: " + rawSql);
+            try (Statement stmt = connection.createStatement()) {
+                stmt.execute(rawSql);
+            }
         } catch (SQLException e) {
             throw new DatabaseException("Error executing DDL: " + rawSql, e);
         }
     }
-    
+
+    private void validateSqlSafety(String sql) throws SQLException {
+        String trimmed = sql.trim().toLowerCase().replaceAll("\\s+", " ");
+        if ((trimmed.startsWith("update") || trimmed.startsWith("delete")) && !trimmed.contains("where")) {
+            throw new SQLException("Unsafe SQL detected: UPDATE or DELETE without WHERE clause.");
+        }
+    }
+
+    private boolean isUpdateOrDelete(String sql) {
+        String trimmed = sql.trim().toLowerCase();
+        return trimmed.startsWith("update") || trimmed.startsWith("delete");
+    }
 
     private String interpolate(String sql, Object... params) {
         if (params == null || params.length == 0) return sql;
