@@ -13,13 +13,13 @@ import java.util.Map;
 public class DatabaseConnector {
 
     @Value("${spring.datasource.url}")
-    private String url;
+    private String url = "jdbc:mysql://localhost:3306/sawal?useSSL=false&serverTimezone=UTC";
 
     @Value("${spring.datasource.username}")
-    private String username;
+    private String username = "root";
 
     @Value("${spring.datasource.password}")
-    private String password;
+    private String password = "YOUR_PASSWORD";
 
     private Connection connection;
 
@@ -35,6 +35,13 @@ public class DatabaseConnector {
         }
     }
 
+    /**
+     * Exposes the underlying JDBC Connection for metadata introspection.
+     */
+    public Connection getConnection() {
+        return this.connection;
+    }
+
     private PreparedStatement prepare(String sql, Object... params) throws SQLException {
         PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         for (int i = 0; i < params.length; i++) {
@@ -43,9 +50,6 @@ public class DatabaseConnector {
         return ps;
     }
 
-    /**
-     * Run a SELECT query with parameters.
-     */
     public ResultSet query(String sql, Object... params) {
         try {
             PreparedStatement ps = prepare(sql, params);
@@ -55,10 +59,6 @@ public class DatabaseConnector {
         }
     }
 
-    /**
-     * Run an INSERT, UPDATE, or DELETE with parameters.
-     * Returns number of affected rows.
-     */
     public int update(String sql, Object... params) {
         try (PreparedStatement ps = prepare(sql, params)) {
             return ps.executeUpdate();
@@ -67,10 +67,6 @@ public class DatabaseConnector {
         }
     }
 
-    /**
-     * Generic INSERT into table with a map of column→value.
-     * Returns the auto‐generated key (if any), or -1.
-     */
     public long insert(String table, Map<String, Object> data) {
         String cols = String.join(", ", data.keySet());
         String placeholders = String.join(", ", data.keySet().stream().map(k -> "?").toList());
@@ -89,11 +85,6 @@ public class DatabaseConnector {
         }
     }
 
-    /**
-     * Generic UPDATE table SET data WHERE clause.
-     * whereClause should be like "id = ?" and whereParams matches its placeholders.
-     * Returns affected rows.
-     */
     public int update(String table, Map<String, Object> data, String whereClause, Object... whereParams) {
         String setClause = data.keySet().stream()
             .map(col -> col + " = ?")
@@ -114,18 +105,11 @@ public class DatabaseConnector {
         }
     }
 
-    /**
-     * Generic DELETE FROM table WHERE clause.
-     * Returns affected rows.
-     */
     public int delete(String table, String whereClause, Object... whereParams) {
         String sql = "DELETE FROM " + table + " WHERE " + whereClause;
         return update(sql, whereParams);
     }
 
-    /**
-     * Fetch a single row by ID as a Map<column, value>.
-     */
     public Map<String, Object> findById(String table, String idColumn, Object id) {
         String sql = "SELECT * FROM " + table + " WHERE " + idColumn + " = ?";
         try (ResultSet rs = query(sql, id)) {
@@ -138,6 +122,14 @@ public class DatabaseConnector {
             return row;
         } catch (SQLException e) {
             throw new DatabaseException("Error fetching by ID from " + table, e);
+        }
+    }
+
+    public void update(String rawSql) {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(rawSql);
+        } catch (SQLException e) {
+            throw new DatabaseException("Error executing DDL: " + rawSql, e);
         }
     }
 
