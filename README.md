@@ -35,7 +35,7 @@ Google Cloud Project with a service account having Vertex AI + Gemini AI + Compu
 2. `cd sawal`
 3. `mkdir src/main/resources`
 4. `nano src/main/resources/application.properties`
-5. add your service-account-key.json in /src/main/resources/
+5. add your `service-account-key.json` in /src/main/resources/
 6. Compile: `./gradlew clean build --refresh-dependencies`
 7. Run: `./gradlew bootRun --stacktrace`
 
