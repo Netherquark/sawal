@@ -1,3 +1,46 @@
+# sawal
+ 
+
+
+ 
+
+Database interaction using natural language queries
+ 
+
+
+ 
+
+Stack:
+ 
+
+* Gemini
+ 
+
+* Spring AI (Vertex)
+ 
+
+* Java
+ 
+
+* Gradle
+ 
+
+* JDBC
+ 
+
+* MySQL
+ 
+
+
+ 
+
+## Project structure & class diagram:
+ 
+
+
+ 
+
+```
 com/
 └── sawal/
     ├── Main.java
@@ -43,3 +86,4 @@ com/
           │
           └── InvalidQueryException.java
               └── class InvalidQueryException   // Thrown for ill-formed or incomplete natural language queries
+```

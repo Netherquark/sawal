@@ -1,5 +1,14 @@
-package src.java.com.sawal.exceptions;
+// DatabaseException.java
+package com.sawal.exceptions;
 
-public class DatabaseException {
-    
+/**
+ * Thrown when there is any problem connecting to or querying the database.
+ */
+public class DatabaseException extends RuntimeException {
+    public DatabaseException(String message) {
+        super(message);
+    }
+    public DatabaseException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
